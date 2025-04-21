@@ -1,0 +1,27 @@
+var CalendarId = "xxx";
+const LINE_TOKEN = 'xxx';
+const GROUP_ID = 'xxx';
+
+function dailyEventMessage() {
+  var d = new Date(),
+      cal = CalendarApp.getCalendarById(CalendarId),
+      events = cal.getEventsForDay(d),
+      fd = d.toLocaleDateString("th-TH", {day:"numeric", month:"long", year:"numeric"}),
+      msg = events.length 
+            ? `📣 ภารกิจของวันที่ ${fd} \n🔶 มีทั้งหมด ${events.length} กิจกรรม\n`
+            : `📣 แจ้งเตือนภารกิจของวันที่ ${fd} ไม่มีกิจกรรม`;
+  
+  events.forEach(function(e, i) {
+    msg += `\n${i+1}. 📁 เรื่อง : ${e.getTitle()}\n    ⏰ เวลา : ${e.getStartTime().toTimeString().slice(0,5)}-${e.getEndTime().toTimeString().slice(0,5)}\n    📍 รายละเอียด : ${e.getDescription()}\n`;
+  });
+  sendLineNotify(msg);
+}
+
+function sendLineNotify(m) {
+  var payload = {to: GROUP_ID, messages: [{type: "text", text: m}]};
+  UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+    method: "post",
+    headers: {"Content-Type": "application/json", "Authorization": "Bearer " + LINE_TOKEN},
+    payload: JSON.stringify(payload)
+  });
+}
