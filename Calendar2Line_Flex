@@ -1,0 +1,80 @@
+var CalendarId = "xxx";
+const LINE_TOKEN = 'xxx';
+const GROUP_ID   = 'xxx';
+
+function dailyEventMessage() {
+  const d      = new Date();
+  const cal    = CalendarApp.getCalendarById(CalendarId);
+  const events = cal.getEventsForDay(d);
+  const fd     = d.toLocaleDateString("th-TH", {day:"numeric", month:"long", year:"numeric"})
+  const summaryText = events.length
+    ? `ภารกิจวันที่ ${fd} จำนวน ${events.length} กิจกรรม`
+    : `ภารกิจวันที่ ${fd} \n– ไม่มีรายการ`;
+  
+  // Build Flex bubble
+  const bubble = {
+    type: "bubble",
+    header: {
+      type: "box",
+      layout: "vertical",
+      contents: [{
+        type: "text",
+        text: summaryText,
+        weight: "bold",
+        size: "lg",
+        wrap: true
+      }]
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      spacing: "md",
+      contents: events.length ? events.map((e, i) => ({
+        type: "box",
+        layout: "vertical",
+        margin: i === 0 ? "none" : "md",
+        contents: [
+          {
+            type: "text",
+            text: `${i+1}. ${e.getTitle()}`,
+            weight: "bold",
+            wrap: true
+          },
+          {
+            type: "text",
+            text: `⏰ ${Utilities.formatDate(e.getStartTime(), "Asia/Bangkok", "HH:mm")}-${Utilities.formatDate(e.getEndTime(), "Asia/Bangkok", "HH:mm")}`,
+            size: "sm",
+            wrap: true
+          },
+          {
+            type: "text",
+            text: e.getDescription() || "– ไม่มีรายละเอียด –",
+            size: "sm",
+            wrap: true
+          }
+        ]
+      })) : [{
+        type: "text",
+        text: "วันนี้ไม่มีภารกิจใดๆ",
+        wrap: true
+      }]
+    }
+  };
+
+  // Send Flex message
+  const payload = {
+    to: GROUP_ID,
+    messages: [{
+      type: "flex",
+      altText: summaryText,
+      contents: bubble
+    }]
+  };
+  
+  UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+    method: "post",
+    contentType: "application/json",
+    headers: { Authorization: "Bearer " + LINE_TOKEN },
+    payload: JSON.stringify(payload)
+  });
+}
